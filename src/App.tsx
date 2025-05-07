@@ -1,0 +1,80 @@
+import { OrbitControls, Sparkles, Text } from "@react-three/drei";
+import { Canvas, useFrame } from "@react-three/fiber";
+import { type Mesh } from "three";
+import { useRef, useState } from "react";
+
+//Componente que renderiza un cubo que gira y se detiene cuando el mouse está sobre él
+const RotatingCube = () => {
+  const meshRef = useRef<Mesh>(null); //Referencia al cubo
+  const [isRotating, setIsRotating] = useState<boolean>(true); //Estado para controlar si el cubo está girando
+  const defaultRotationSpeed = 0.01; //Velocidad de rotación por defecto
+  const acceleration = 0.00005; //Aceleración de la rotación
+  const [rotationSpeed, setRotationSpeed] =
+    useState<number>(defaultRotationSpeed); //Velocidad de rotación actual
+
+  // useFrame es un hook que se ejecuta en cada frame de la animación
+  useFrame(() => {
+    if (meshRef.current) {
+      const { rotation } = meshRef.current; //Obtiene la rotación actual del cubo
+      rotation.x += rotationSpeed; //Añade la velocidad de rotación a la rotación actual
+      rotation.y += rotationSpeed; //Añade la velocidad de rotación a la rotación actual
+      if (!isRotating && rotationSpeed > 0) {
+        setRotationSpeed((prev) => Math.max(0, prev - acceleration)); //Reduce la velocidad de rotación si el cubo no está girando y la velocidad es mayor que 0
+      } else if (isRotating && rotationSpeed < defaultRotationSpeed) {
+        setRotationSpeed((prev) =>
+          Math.min(defaultRotationSpeed, prev + acceleration)
+        ); //Aumenta la velocidad de rotación si el cubo está girando y la velocidad es menor que la velocidad por defecto
+      }
+    }
+  });
+  return (
+    <>
+      {/* Si el cubo no está girando, muestra el texto "Stopping" o "Stopped" dependiendo de la velocidad de rotación */}
+      {!isRotating && (
+        <Text position={[0, 0, 2]} color={"#000000"} fontSize={0.4}>
+          {rotationSpeed > 0 ? "Stopping" : "Stopped"}
+        </Text>
+      )}
+      <mesh
+        ref={meshRef}
+        onPointerEnter={() => setIsRotating(false)}
+        onPointerLeave={() => setIsRotating(true)}
+      >
+        {/* Cubo */}
+        <boxGeometry args={[1.5, 1.5, 1.5]} />
+        {/* Material del cubo */}
+        <meshLambertMaterial color={"#468585"} emissive={"#468585"} />
+        {/* Efecto de estrellas */}
+        <Sparkles
+          speed={0.001}
+          color={"orange"}
+          size={6}
+          scale={2}
+          count={20}
+          noise={0.2}
+        />
+      </mesh>
+    </>
+  );
+};
+
+const App = () => {
+  return (
+    <Canvas
+      style={{
+        height: "100vh",
+        width: "100vw",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+      }}
+    >
+      <OrbitControls enableZoom={true} enablePan enableRotate />
+      <directionalLight position={[1, 1, 1]} intensity={10} color={0x9cdba6} />
+      <color attach={"background"} args={["#F0F0F0"]} />
+      <RotatingCube />
+    </Canvas>
+  );
+};
+
+export default App;
